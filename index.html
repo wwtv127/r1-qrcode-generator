@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>R1 Creation Generator</title>
+    <title>Rabbit R1 Creation Generator</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
@@ -30,9 +30,9 @@
     <div class="max-w-6xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10 border border-slate-100">
         
         <div class="mb-8 border-b pb-6">
-            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">R1 Creation Generator</h1>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">Rabbit R1 Creation Generator</h1>
             <p class="text-slate-500 mb-4">
-                Instantly publish and generate metadata-rich QR codes for your hosted creations.
+                Instantly publish and generate QR codes for your Rabbit R1 Creations.
             </p>
 
             <!-- Configuration Section -->
@@ -40,7 +40,7 @@
                 <label class="block text-xs font-bold text-indigo-800 uppercase mb-2">GitHub Authentication</label>
                 <div class="flex flex-col md:flex-row gap-4">
                     <div class="flex-grow">
-                        <input type="password" id="githubToken" placeholder="Paste your Personal Access Token (ghp_...)" class="w-full p-2 border border-indigo-200 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
+                        <input type="password" id="githubToken" placeholder="Personal Access Token (ghp_...)" class="w-full p-2 border border-indigo-200 rounded focus:ring-2 focus:ring-indigo-500 text-sm">
                         <p class="text-xs text-indigo-400 mt-1">
                             Requires 'gist' scope. <a href="https://github.com/settings/tokens/new?scopes=gist&description=R1+Generator" target="_blank" class="underline hover:text-indigo-600">Generate token</a>.
                         </p>
@@ -59,7 +59,7 @@
         <div id="uploadOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
             <div class="bg-indigo-600 text-white p-4 rounded-xl shadow-xl flex items-center space-x-3">
                 <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span>Publishing Gist & Generating Metadata...</span>
+                <span>Publishing to Gist...</span>
             </div>
         </div>
 
@@ -68,8 +68,8 @@
             <!-- LEFT: Editor & Metadata -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="input-group">
-                    <label for="htmlContent">1. Source Code (HTML/CSS/JS)</label>
-                    <textarea id="htmlContent" rows="10" class="code-font" placeholder="Paste your HTML code here...">
+                    <label for="htmlContent">1. Creation Source Code</label>
+                    <textarea id="htmlContent" rows="10" class="code-font" placeholder="Paste your HTML here...">
 <!DOCTYPE html>
 <html>
 <head>
@@ -90,12 +90,12 @@
                 </div>
 
                 <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
-                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider border-b pb-2">2. Customization (R1 Metadata)</h3>
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wider border-b pb-2">2. Creation Metadata</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="input-group">
                             <label>Title</label>
-                            <input type="text" id="metaTitle" placeholder="e.g. Barkle" value="Barkle">
+                            <input type="text" id="metaTitle" placeholder="Barkle" value="Barkle">
                         </div>
                         <div class="input-group">
                             <label>Theme Color</label>
@@ -108,7 +108,7 @@
 
                     <div class="input-group">
                         <label>Description</label>
-                        <input type="text" id="metaDesc" placeholder="Brief tagline..." value="Social platform">
+                        <input type="text" id="metaDesc" placeholder="Social platform" value="Social platform">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -118,7 +118,7 @@
                         </div>
                         <div class="input-group">
                             <label>Author</label>
-                            <input type="text" id="metaAuthor" placeholder="Your Name" value="">
+                            <input type="text" id="metaAuthor" placeholder="Name" value="">
                         </div>
                     </div>
 
@@ -130,7 +130,7 @@
 
                 <div class="pt-2">
                     <button id="generateBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition duration-200 shadow-lg text-lg flex items-center justify-center space-x-2">
-                        <span>Publish & Generate R1 Artifact</span>
+                        <span>Publish & Generate QR Code</span>
                     </button>
                 </div>
             </div>
@@ -138,12 +138,12 @@
             <!-- RIGHT: Output -->
             <div class="space-y-6">
                 <div class="bg-slate-100 p-6 rounded-xl border border-slate-200 shadow-inner">
-                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center uppercase">R1 Ready QR Code</h3>
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center uppercase">QR Code</h3>
                     <div id="qrcode-container">
-                        <p class="text-slate-400 text-xs text-center">Fill details and click publish to generate code.</p>
+                        <p class="text-slate-400 text-xs text-center">QR code will be generated after publishing.</p>
                     </div>
                     <div class="mt-4 text-center hidden" id="previewContainer">
-                         <a id="previewLink" href="#" target="_blank" class="inline-block bg-white border border-slate-300 px-4 py-2 rounded-full text-xs text-indigo-600 font-bold hover:shadow-sm transition">View Hosted Site</a>
+                         <a id="previewLink" href="#" target="_blank" class="inline-block bg-white border border-slate-300 px-4 py-2 rounded-full text-xs text-indigo-600 font-bold hover:shadow-sm transition">View Creation</a>
                     </div>
                 </div>
 
@@ -208,7 +208,7 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        description: `R1 Creation: ${document.getElementById('metaTitle').value}`,
+                        description: `Rabbit R1 Creation: ${document.getElementById('metaTitle').value}`,
                         public: true,
                         files: { "index.html": { "content": html } }
                     })
@@ -216,6 +216,9 @@
 
                 if (!response.ok) {
                     const err = await response.json();
+                    if (err.message === "Bad credentials") {
+                        throw new Error("The GitHub token provided is invalid.");
+                    }
                     throw new Error(err.message || "Failed to connect to GitHub");
                 }
 
@@ -250,7 +253,7 @@
                 document.getElementById('previewLink').href = hostedUrl;
 
             } catch (e) {
-                alert("Error Publishing: " + e.message);
+                alert("Error: " + e.message);
                 console.error(e);
             } finally {
                 overlay.classList.add('hidden');
