@@ -155,110 +155,111 @@
         </div>
     </div>
 
-    <script>
-        const btn = document.getElementById('generateBtn');
-        const overlay = document.getElementById('uploadOverlay');
-        const tokenInput = document.getElementById('githubToken');
-        const saveCheck = document.getElementById('saveToken');
-        const colorPicker = document.getElementById('metaColorPicker');
-        const colorInput = document.getElementById('metaColor');
+   <script>
+    const btn = document.getElementById('generateBtn');
+    const overlay = document.getElementById('uploadOverlay');
+    const tokenInput = document.getElementById('githubToken');
+    const saveCheck = document.getElementById('saveToken');
+    const colorPicker = document.getElementById('metaColorPicker');
+    const colorInput = document.getElementById('metaColor');
 
-        // Sync color inputs
-        colorPicker.addEventListener('input', (e) => colorInput.value = e.target.value.toUpperCase());
-        colorInput.addEventListener('input', (e) => {
-            if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                colorPicker.value = e.target.value;
-            }
-        });
+    // Sync color inputs
+    colorPicker.addEventListener('input', (e) => colorInput.value = e.target.value.toUpperCase());
+    colorInput.addEventListener('input', (e) => {
+        if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+            colorPicker.value = e.target.value;
+        }
+    });
 
-        // Load saved token
-        window.addEventListener('load', () => {
-            const saved = localStorage.getItem('r1_gh_token');
-            if (saved) {
-                tokenInput.value = saved;
-                saveCheck.checked = true;
-            }
-        });
+    // Load saved token
+    window.addEventListener('load', () => {
+        const saved = localStorage.getItem('r1_gh_token');
+        if (saved) {
+            tokenInput.value = saved;
+            saveCheck.checked = true;
+        }
+    });
 
-        saveCheck.addEventListener('change', () => {
-            if (!saveCheck.checked) localStorage.removeItem('r1_gh_token');
-            else if (tokenInput.value) localStorage.setItem('r1_gh_token', tokenInput.value);
-        });
+    saveCheck.addEventListener('change', () => {
+        if (!saveCheck.checked) localStorage.removeItem('r1_gh_token');
+        else if (tokenInput.value) localStorage.setItem('r1_gh_token', tokenInput.value);
+    });
 
-        tokenInput.addEventListener('input', () => {
-            if (saveCheck.checked) localStorage.setItem('r1_gh_token', tokenInput.value);
-        });
+    tokenInput.addEventListener('input', () => {
+        if (saveCheck.checked) localStorage.setItem('r1_gh_token', tokenInput.value);
+    });
 
-        btn.addEventListener('click', async () => {
-            const html = document.getElementById('htmlContent').value;
-            const token = tokenInput.value.trim();
+    btn.addEventListener('click', async () => {
+        const html = document.getElementById('htmlContent').value;
+        const token = tokenInput.value.trim();
 
-            if (!token) return alert("Please enter your GitHub Token.");
-            if (!html.trim()) return alert("Source code cannot be empty.");
+        if (!token) return alert("Please enter your GitHub Token.");
+        if (!html.trim()) return alert("Source code cannot be empty.");
 
-            overlay.classList.remove('hidden');
+        overlay.classList.remove('hidden');
 
-            try {
-                // 1. Create Public Gist
-                const response = await fetch("https://api.github.com/gists", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `token ${token}`,
-                        "Accept": "application/vnd.github.v3+json",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        description: `Rabbit R1 Creation: ${document.getElementById('metaTitle').value}`,
-                        public: true,
-                        files: { "index.html": { "content": html } }
-                    })
-                });
+        try {
+            // 1. Create Public Gist
+            const response = await fetch("https://api.github.com/gists", {
+                method: "POST",
+                headers: {
+                    "Authorization": `token ${token}`,
+                    "Accept": "application/vnd.github.v3+json",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    description: `Rabbit R1 Creation: ${document.getElementById('metaTitle').value}`,
+                    public: true,
+                    files: { "index.html": { "content": html } }
+                })
+            });
 
-                if (!response.ok) {
-                    const err = await response.json();
-                    if (err.message === "Bad credentials") {
-                        throw new Error("The GitHub token provided is invalid.");
-                    }
-                    throw new Error(err.message || "Failed to connect to GitHub");
+            if (!response.ok) {
+                const err = await response.json();
+                if (err.message === "Bad credentials") {
+                    throw new Error("The GitHub token provided is invalid.");
                 }
-
-                const data = await response.json();
-                const rawUrl = data.files["index.html"].raw_url;
-                const hostedUrl = `https://htmlpreview.github.io/?${rawUrl}`;
-
-                // 2. Construct Full Custom JSON
-                const r1Json = {
-                    title: document.getElementById('metaTitle').value,
-                    url: hostedUrl,
-                    description: document.getElementById('metaDesc').value,
-                    iconUrl: document.getElementById('metaIcon').value,
-                    themeColor: document.getElementById('metaColor').value,
-                    author: document.getElementById('metaAuthor').value,
-                    screenshotUrl: document.getElementById('metaScreenshot').value
-                };
-
-                // 3. Update Visuals
-                document.getElementById('jsonOutput').textContent = JSON.stringify(r1Json, null, 2);
-
-                const qrContainer = document.getElementById('qrcode-container');
-                qrContainer.innerHTML = "";
-                new QRCode(qrContainer, {
-                    text: JSON.stringify(r1Json),
-                    width: 256,
-                    height: 256,
-                    correctLevel: QRCode.CorrectLevel.L
-                });
-                
-                document.getElementById('previewContainer').classList.remove('hidden');
-                document.getElementById('previewLink').href = hostedUrl;
-
-            } catch (e) {
-                alert("Error: " + e.message);
-                console.error(e);
-            } finally {
-                overlay.classList.add('hidden');
+                throw new Error(err.message || "Failed to connect to GitHub");
             }
-        });
-    </script>
+
+            const data = await response.json();
+            
+            // INTERNAL UPDATE: Use gistpreview service using the Gist ID
+            const hostedUrl = `https://gistpreview.github.io/?${data.id}`;
+
+            // 2. Construct Full Custom JSON
+            const r1Json = {
+                title: document.getElementById('metaTitle').value,
+                url: hostedUrl,
+                description: document.getElementById('metaDesc').value,
+                iconUrl: document.getElementById('metaIcon').value,
+                themeColor: document.getElementById('metaColor').value,
+                author: document.getElementById('metaAuthor').value,
+                screenshotUrl: document.getElementById('metaScreenshot').value
+            };
+
+            // 3. Update Visuals
+            document.getElementById('jsonOutput').textContent = JSON.stringify(r1Json, null, 2);
+
+            const qrContainer = document.getElementById('qrcode-container');
+            qrContainer.innerHTML = "";
+            new QRCode(qrContainer, {
+                text: JSON.stringify(r1Json),
+                width: 256,
+                height: 256,
+                correctLevel: QRCode.CorrectLevel.L
+            });
+            
+            document.getElementById('previewContainer').classList.remove('hidden');
+            document.getElementById('previewLink').href = hostedUrl;
+
+        } catch (e) {
+            alert("Error: " + e.message);
+            console.error(e);
+        } finally {
+            overlay.classList.add('hidden');
+        }
+    });
+</script>
 </body>
 </html>
