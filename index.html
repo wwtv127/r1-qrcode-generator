@@ -12,6 +12,17 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <style>
+        /* Instant Black Screen Loading State */
+        body.loading-state {
+            background-color: #000 !important;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        body.loading-state #main-ui {
+            display: none !important;
+        }
+
         body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
         #qrcode-container {
             display: flex; justify-content: center; align-items: center;
@@ -21,18 +32,78 @@
         #qrcode-container img { margin: 0 auto; }
         .input-group label { font-weight: 600; margin-bottom: 0.25rem; display: block; color: #334155; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.025em; }
         .input-group input, .input-group textarea { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; background-color: #f8fafc; font-family: inherit; font-size: 0.875rem; }
-        .input-group input:focus, .input-group textarea:focus { outline: none; border-color: #3b82f6; ring: 2px; ring-color: #93c5fd; }
+        .input-group input:focus, .input-group textarea:focus { outline: none; border-color: #6366f1; ring: 2px; ring-color: #c7d2fe; }
         .code-font { font-family: monospace !important; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div class="max-w-6xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10 border border-slate-100">
+    <script>
+        /**
+         * 1. IMMEDIATE INTERCEPTION (The Gist Previewer Technique)
+         * This runs before anything else to ensure a black screen if we are in "Preview Mode"
+         */
+        const params = new URLSearchParams(window.location.search);
+        const gistUrl = params.get("gist");
+
+        if (gistUrl) {
+            document.body.classList.add('loading-state');
+            
+            let gistId = null;
+            let rawFilePath = null;
+
+            // Extract Gist ID from URL
+            if (gistUrl.includes("gist.githubusercontent.com")) {
+                const parts = gistUrl.split("/");
+                gistId = parts[4];
+                rawFilePath = parts.slice(7).join("/");
+            } else {
+                const match = gistUrl.match(/gist.github.com\/[^/]+\/([a-f0-9]+)/i);
+                if (match) gistId = match[1];
+            }
+
+            if (gistId) {
+                fetch(`https://api.github.com/gists/${gistId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        let files = Object.values(data.files);
+                        if (rawFilePath) files = files.filter(f => f.filename === rawFilePath.split("/").pop());
+
+                        if (files.length === 0) {
+                            document.body.classList.remove('loading-state');
+                            return;
+                        }
+
+                        const file = files[0];
+                        if (file.filename.endsWith(".html")) {
+                            // document.write replaces the page entirely
+                            document.open();
+                            document.write(file.content);
+                            document.close();
+                        } else {
+                            // Fallback for non-HTML files
+                            document.body.classList.remove('loading-state');
+                            const pre = document.createElement('pre');
+                            pre.className = "p-8 text-white bg-slate-900 font-mono";
+                            pre.textContent = file.content;
+                            document.body.appendChild(pre);
+                        }
+                    })
+                    .catch(err => {
+                        document.body.classList.remove('loading-state');
+                        console.error("Preview Error:", err);
+                    });
+            }
+        }
+    </script>
+
+    <!-- MAIN UI (Hidden if gist param is present) -->
+    <div id="main-ui" class="max-w-6xl mx-auto bg-white shadow-2xl rounded-xl p-6 md:p-10 border border-slate-100">
         
         <div class="mb-8 border-b pb-6">
             <h1 class="text-3xl md:text-4xl font-extrabold text-slate-800 mb-2">Rabbit R1 Creation Generator</h1>
             <p class="text-slate-500 mb-4">
-                Instantly publish and generate QR codes for your Rabbit R1 Creations.
+                Publish code to Gist and generate R1-compatible QR codes instantly.
             </p>
 
             <!-- Configuration Section -->
@@ -59,7 +130,7 @@
         <div id="uploadOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
             <div class="bg-indigo-600 text-white p-4 rounded-xl shadow-xl flex items-center space-x-3">
                 <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                <span>Publishing to Gist...</span>
+                <span>Hosting and generating QR...</span>
             </div>
         </div>
 
@@ -68,23 +139,17 @@
             <!-- LEFT: Editor & Metadata -->
             <div class="lg:col-span-2 space-y-6">
                 <div class="input-group">
-                    <label for="htmlContent">1. Creation Source Code</label>
-                    <textarea id="htmlContent" rows="10" class="code-font" placeholder="Paste your HTML here...">
-<!DOCTYPE html>
+                    <label for="htmlContent">1. Creation Source Code (HTML)</label>
+                    <textarea id="htmlContent" rows="10" class="code-font" placeholder="Paste your HTML here..."><!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
 <style>
-  body { background: #0f172a; color: #f8fafc; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
-  .card { background: #1e293b; padding: 2.5rem; border-radius: 1.5rem; text-align: center; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); border: 1px solid #334155; }
-  h1 { color: #38bdf8; margin: 0; }
+  body { background: #000; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+  h1 { border: 2px solid #fe0000; padding: 20px; border-radius: 10px; }
 </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Barkle Live</h1>
-    <p>Social Platform Preview</p>
-  </div>
+  <h1>Hello R1</h1>
 </body>
 </html></textarea>
                 </div>
@@ -95,7 +160,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="input-group">
                             <label>Title</label>
-                            <input type="text" id="metaTitle" placeholder="Barkle" value="Barkle">
+                            <input type="text" id="metaTitle" placeholder="App Title" value="My Creation">
                         </div>
                         <div class="input-group">
                             <label>Theme Color</label>
@@ -108,7 +173,7 @@
 
                     <div class="input-group">
                         <label>Description</label>
-                        <input type="text" id="metaDesc" placeholder="Social platform" value="Social platform">
+                        <input type="text" id="metaDesc" placeholder="Brief description" value="Published via Generator">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -118,7 +183,7 @@
                         </div>
                         <div class="input-group">
                             <label>Author</label>
-                            <input type="text" id="metaAuthor" placeholder="Name" value="">
+                            <input type="text" id="metaAuthor" placeholder="Your name" value="">
                         </div>
                     </div>
 
@@ -137,19 +202,19 @@
 
             <!-- RIGHT: Output -->
             <div class="space-y-6">
-                <div class="bg-slate-100 p-6 rounded-xl border border-slate-200 shadow-inner">
-                    <h3 class="text-sm font-bold text-slate-700 mb-4 text-center uppercase">QR Code</h3>
+                <div class="bg-slate-100 p-6 rounded-xl border border-slate-200 shadow-inner text-center">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4 uppercase">QR Code</h3>
                     <div id="qrcode-container">
-                        <p class="text-slate-400 text-xs text-center">QR code will be generated after publishing.</p>
+                        <p class="text-slate-400 text-xs">Ready to generate.</p>
                     </div>
-                    <div class="mt-4 text-center hidden" id="previewContainer">
-                         <a id="previewLink" href="#" target="_blank" class="inline-block bg-white border border-slate-300 px-4 py-2 rounded-full text-xs text-indigo-600 font-bold hover:shadow-sm transition">View Creation</a>
+                    <div class="mt-4 hidden" id="previewContainer">
+                         <a id="previewLink" href="#" target="_blank" class="inline-block bg-white border border-slate-300 px-4 py-2 rounded-full text-xs text-indigo-600 font-bold hover:shadow-sm transition">View Hosted Page</a>
                     </div>
                 </div>
 
                 <div>
                     <h3 class="text-xs font-bold text-slate-700 mb-2 uppercase">JSON Payload</h3>
-                    <pre class="bg-slate-900 text-blue-300 p-4 rounded-lg overflow-x-auto text-[10px] font-mono leading-relaxed shadow-lg border border-slate-700" style="max-height: 400px;"><code id="jsonOutput">{}</code></pre>
+                    <pre class="bg-slate-900 text-indigo-300 p-4 rounded-lg overflow-x-auto text-[10px] font-mono leading-relaxed shadow-lg border border-slate-700" style="max-height: 400px;"><code id="jsonOutput">{}</code></pre>
                 </div>
             </div>
         </div>
@@ -162,6 +227,7 @@
         const saveCheck = document.getElementById('saveToken');
         const colorPicker = document.getElementById('metaColorPicker');
         const colorInput = document.getElementById('metaColor');
+        const qrContainer = document.getElementById('qrcode-container');
 
         // Sync color inputs
         colorPicker.addEventListener('input', (e) => colorInput.value = e.target.value.toUpperCase());
@@ -180,14 +246,16 @@
             }
         });
 
-        saveCheck.addEventListener('change', () => {
-            if (!saveCheck.checked) localStorage.removeItem('r1_gh_token');
-            else if (tokenInput.value) localStorage.setItem('r1_gh_token', tokenInput.value);
-        });
-
-        tokenInput.addEventListener('input', () => {
-            if (saveCheck.checked) localStorage.setItem('r1_gh_token', tokenInput.value);
-        });
+        // Token persistence
+        const updatePersistence = () => {
+            if (saveCheck.checked && tokenInput.value) {
+                localStorage.setItem('r1_gh_token', tokenInput.value);
+            } else if (!saveCheck.checked) {
+                localStorage.removeItem('r1_gh_token');
+            }
+        };
+        saveCheck.addEventListener('change', updatePersistence);
+        tokenInput.addEventListener('input', updatePersistence);
 
         btn.addEventListener('click', async () => {
             const html = document.getElementById('htmlContent').value;
@@ -208,7 +276,7 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        description: `Rabbit R1 Creation: ${document.getElementById('metaTitle').value}`,
+                        description: `R1 Creation: ${document.getElementById('metaTitle').value}`,
                         public: true,
                         files: { "index.html": { "content": html } }
                     })
@@ -216,20 +284,22 @@
 
                 if (!response.ok) {
                     const err = await response.json();
-                    if (err.message === "Bad credentials") {
-                        throw new Error("The GitHub token provided is invalid.");
-                    }
-                    throw new Error(err.message || "Failed to connect to GitHub");
+                    throw new Error(err.message || "Failed to create Gist");
                 }
 
                 const data = await response.json();
-                const rawUrl = data.files["index.html"].raw_url;
-                const hostedUrl = `https://htmlpreview.github.io/?${rawUrl}`;
+                
+                /**
+                 * 2. GENERATE PREVIEW URL
+                 * Using the Gist Previewer Technique: current_page_url?gist=gist_html_url
+                 */
+                const selfUrl = window.location.origin + window.location.pathname;
+                const previewerUrl = `${selfUrl}?gist=${data.html_url}`;
 
-                // 2. Construct Full Custom JSON
+                // 3. Construct R1 JSON Payload
                 const r1Json = {
                     title: document.getElementById('metaTitle').value,
-                    url: hostedUrl,
+                    url: previewerUrl,
                     description: document.getElementById('metaDesc').value,
                     iconUrl: document.getElementById('metaIcon').value,
                     themeColor: document.getElementById('metaColor').value,
@@ -237,10 +307,9 @@
                     screenshotUrl: document.getElementById('metaScreenshot').value
                 };
 
-                // 3. Update Visuals
+                // 4. UI Updates
                 document.getElementById('jsonOutput').textContent = JSON.stringify(r1Json, null, 2);
-
-                const qrContainer = document.getElementById('qrcode-container');
+                
                 qrContainer.innerHTML = "";
                 new QRCode(qrContainer, {
                     text: JSON.stringify(r1Json),
@@ -250,7 +319,7 @@
                 });
                 
                 document.getElementById('previewContainer').classList.remove('hidden');
-                document.getElementById('previewLink').href = hostedUrl;
+                document.getElementById('previewLink').href = previewerUrl;
 
             } catch (e) {
                 alert("Error: " + e.message);
